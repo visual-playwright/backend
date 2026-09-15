@@ -1,11 +1,15 @@
-# AutoQA production: backend + TLS otomatis (Caddy).
-# DNS diatur manual dari web ke IP publik VM — tanpa updater DuckDNS.
-# Jaringan: pakai network eksternal (global-network) milik MySQL
-# agar DB_HOST=global-mysql resolve dari container backend.
+# AutoQA production: backend saja.
+# TLS + port 80/443 dipegang nginx HOST (bukan Caddy) — pola sama seperti
+# bearich (proxy_pass ke 127.0.0.1:<port>). DNS diatur manual ke IP publik VM.
+# DB: container global-mysql di network eksternal global-network,
+# diakses via DB_HOST=global-mysql.
 services:
   autoqa:
     build: .
     env_file: .env
+    ports:
+      # Localhost saja (ikuti pola bearich 127.0.0.1:4000) — publik via nginx host.
+      - "127.0.0.1:5002:5002"
     environment:
       # Samakan path kerja OpenCode dengan layout container (lihat aiService.js).
       OPENCODE_DIR: /app
@@ -21,24 +25,9 @@ services:
     networks:
       - global-network
 
-  caddy:
-    image: caddy:2-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy-data:/data
-      - caddy-config:/config
-    restart: unless-stopped
-    networks:
-      - global-network
-
 networks:
   global-network:
     external: true
 
 volumes:
   autoqa-storage:
-  caddy-data:
-  caddy-config:
