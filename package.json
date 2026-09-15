@@ -1,0 +1,28 @@
+{
+  "name": "autoqa-backend",
+  "version": "0.1.0",
+  "description": "Backend Auto Visual QA — Express MVC, pola webMikobot",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "seed": "node src/utils/seed.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.15.1",
+    "openai": "^4.104.0",
+    "playwright": "^1.62.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

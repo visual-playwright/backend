@@ -1,0 +1,4 @@
+# TLS otomatis (Let's Encrypt) untuk backend DuckDNS → reverse proxy ke Node.
+visual-playwright.duckdns.org {
+	reverse_proxy autoqa:5002
+}

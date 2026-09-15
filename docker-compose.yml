@@ -1,0 +1,51 @@
+# AutoQA production: backend + TLS otomatis (Caddy) + updater DuckDNS.
+# Jaringan: pakai network eksternal milik mysql-global (global-network)
+# agar DB_HOST=mysql-global resolve dari container backend.
+services:
+  autoqa:
+    build: .
+    env_file: .env
+    environment:
+      # Samakan path kerja OpenCode dengan layout container (lihat aiService.js).
+      OPENCODE_DIR: /app
+      OPENCODE_CWD: /app
+    volumes:
+      # Screenshot run — persistensi di luar lapisan image.
+      - autoqa-storage:/app/storage
+      # Auth CLI OpenCode milik user VM (read-only, JANGAN di-bake ke image).
+      # Sesuaikan sisi kiri bila HOME Anda bukan /home/<user> (cek: echo $HOME).
+      - ~/.config/opencode:/home/runner/.config/opencode:ro
+      - ~/.local/share/opencode:/home/runner/.local/share/opencode:ro
+    restart: unless-stopped
+    networks:
+      - global-network
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+    networks:
+      - global-network
+
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    environment:
+      SUBDOMAINS: visual-playwright
+      TOKEN: ${DUCKDNS_TOKEN:?isi-token-duckdns}
+      LOG_FILE: "false"
+    restart: unless-stopped
+
+networks:
+  global-network:
+    external: true
+
+volumes:
+  autoqa-storage:
+  caddy-data:
+  caddy-config:
