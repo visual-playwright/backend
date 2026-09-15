@@ -1,6 +1,7 @@
-# AutoQA production: backend + TLS otomatis (Caddy) + updater DuckDNS.
-# Jaringan: pakai network eksternal milik mysql-global (global-network)
-# agar DB_HOST=mysql-global resolve dari container backend.
+# AutoQA production: backend + TLS otomatis (Caddy).
+# DNS diatur manual dari web ke IP publik VM — tanpa updater DuckDNS.
+# Jaringan: pakai network eksternal (global-network) milik MySQL
+# agar DB_HOST=global-mysql resolve dari container backend.
 services:
   autoqa:
     build: .
@@ -32,14 +33,6 @@ services:
     restart: unless-stopped
     networks:
       - global-network
-
-  duckdns:
-    image: lscr.io/linuxserver/duckdns:latest
-    environment:
-      SUBDOMAINS: visual-playwright
-      TOKEN: ${DUCKDNS_TOKEN:?isi-token-duckdns}
-      LOG_FILE: "false"
-    restart: unless-stopped
 
 networks:
   global-network:
