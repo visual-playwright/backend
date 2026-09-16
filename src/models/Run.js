@@ -1,10 +1,11 @@
 const db = require("../../config/db");
 const { randomUUID } = require("crypto");
+const { normalizeRunRow, normalizeStepRow } = require("../utils/time");
 
 async function create({ result_name, domain, url, username, password, scenario_id, rendered_prompt }) {
   const id = randomUUID();
   await db.query(
-    "INSERT INTO runs (id, result_name, domain, url, username, password, scenario_id, status, rendered_prompt, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'QUEUED', ?, NOW())",
+    "INSERT INTO runs (id, result_name, domain, url, username, password, scenario_id, status, rendered_prompt, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'QUEUED', ?, UTC_TIMESTAMP())",
     [id, result_name, domain, url, username, password, scenario_id, rendered_prompt]
   );
   return id;
@@ -24,7 +25,7 @@ async function list({ domain, scenario }) {
   sql += " ORDER BY started_at DESC LIMIT 200";
   const [rows] = await db.query(sql, params);
   // Jangan bocorkan username/password di list
-  return rows;
+  return rows.map(normalizeRunRow);
 }
 
 async function saveSession(id, sessionId) {
@@ -49,7 +50,9 @@ async function findWithSteps(id) {
     "SELECT no, instruction, visual_element, status, dynamic_reasoning, notes, screenshot_path, created_at FROM run_steps WHERE run_id = ? ORDER BY no ASC",
     [id]
   );
-  return { ...runs[0], steps };
+  const run = normalizeRunRow({ ...runs[0] });
+  run.steps = (steps || []).map(normalizeStepRow);
+  return run;
 }
 
 // Untuk worker saja (berisi password + rendered_prompt, jangan expose via API)
@@ -64,7 +67,7 @@ async function markRunning(id) {
 
 async function finish(id, { status, total_steps, steps_passed, executable_rate, goal_achieved, dynamic_reasoning_count, entity_name, data_contoh }) {
   await db.query(
-    "UPDATE runs SET status = ?, total_steps = ?, steps_passed = ?, executable_rate = ?, goal_achieved = ?, dynamic_reasoning_count = ?, entity_name = ?, data_contoh = ?, finished_at = NOW() WHERE id = ?",
+    "UPDATE runs SET status = ?, total_steps = ?, steps_passed = ?, executable_rate = ?, goal_achieved = ?, dynamic_reasoning_count = ?, entity_name = ?, data_contoh = ?, finished_at = UTC_TIMESTAMP() WHERE id = ?",
     [status, total_steps, steps_passed, executable_rate, goal_achieved, dynamic_reasoning_count, entity_name || null, data_contoh || null, id]
   );
 }
