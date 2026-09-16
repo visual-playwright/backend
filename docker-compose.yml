@@ -19,8 +19,10 @@ services:
       - autoqa-storage:/app/storage
       # Auth CLI OpenCode milik user VM (read-only, JANGAN di-bake ke image).
       # Sesuaikan sisi kiri bila HOME Anda bukan /home/<user> (cek: echo $HOME).
+      # Config tetap RO (kredensial aman); share RW karena CLI wajib menulis
+      # data sesi di sana (flag -s sessionId di aiService.js) — RO = EROFS.
       - ~/.config/opencode:/home/runner/.config/opencode:ro
-      - ~/.local/share/opencode:/home/runner/.local/share/opencode:ro
+      - ~/.local/share/opencode:/home/runner/.local/share/opencode:rw
     restart: unless-stopped
     networks:
       - global-network
