@@ -61,7 +61,11 @@ async function executeRun(runId) {
   if (!run) return;
   await Run.markRunning(runId);
 
-  const browser = await chromium.launch({ headless: process.env.BROWSER_HEADLESS !== "false" });
+  const browser = await chromium.launch({
+    headless: process.env.BROWSER_HEADLESS !== "false",
+    // Wajib di container: /dev/shm kecil (64MB) + sandbox bermasalah.
+    args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+  });
   const context = await browser.newContext({ viewport: { width: VIEWPORT_W, height: VIEWPORT_H } });
   const page = await context.newPage();
   // Dialog konfirmasi (R-04): terima otomatis kecuali LLM minta dismiss
@@ -85,6 +89,8 @@ async function executeRun(runId) {
   // abortReason menghentikan run sebagai FAILED; recentKeys mendeteksi loop klik.
   let abortReason = null;
   const recentKeys = [];
+  // Buffer screenshot terakhir — di-scope luar agar recordAbort bisa memakainya.
+  let buffer = null;
 
   // Mencatat marker penghentian (1 step FAIL) lalu keluar loop via break oleh pemanggil.
   async function recordAbort(reason) {
@@ -92,7 +98,11 @@ async function executeRun(runId) {
     no += 1;
     const sp = shotPath(runId, no);
     try {
-      fs.writeFileSync(sp.abs, buffer);
+      const fresh = await page.screenshot();
+      if (fresh) buffer = fresh;
+    } catch {}
+    try {
+      if (buffer) fs.writeFileSync(sp.abs, buffer);
     } catch {}
     const step = {
       no,
@@ -109,7 +119,7 @@ async function executeRun(runId) {
 
   try {
     await page.goto(run.url, { waitUntil: "domcontentloaded", timeout: 20000 });
-    let buffer = await page.screenshot();
+    buffer = await page.screenshot();
     let p = shotPath(runId, 0);
     fs.writeFileSync(p.abs, buffer);
     history.push({ no: 0, instruction: `Buka ${run.url}`, status: "PASS", dynamic_reasoning: "NONE", screenshot: p.rel });

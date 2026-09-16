@@ -1,7 +1,8 @@
 FROM node:20-bookworm-slim
 
 ENV TZ=Asia/Jakarta \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 WORKDIR /app
 
@@ -22,9 +23,11 @@ RUN curl -fsSL https://opencode.ai/install | bash \
 COPY . .
 
 # Data run (screenshot) hidup di volume, bukan di lapisan image.
+# Browser Playwright di /ms-playwright (shared path) agar terbaca USER runner;
+# install sebagai root menaruhnya di /root/.cache yang tak terlihat runner (penyebab FAILED 0 steps).
 RUN useradd -m -u 1001 -d /home/runner runner \
- && mkdir -p storage/runs \
- && chown -R 1001:1001 /app
+  && mkdir -p storage/runs /ms-playwright \
+  && chown -R 1001:1001 /ms-playwright /app
 USER 1001
 
 EXPOSE 5002
