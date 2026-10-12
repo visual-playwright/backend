@@ -15,7 +15,7 @@ const { spawn } = require("child_process");
 const path = require("path");
 
 const ZEN_MODEL = process.env.ZEN_MODEL || "muse-spark-1.3-contributor-free";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
 const OPENCODE_BIN = process.env.OPENCODE_BIN || "opencode";
 // cwd proses spawn harus direktori project yang sudah dikenal opencode
 // (cwd di dalam backend/ menggantung FileSystem); --dir tetap backend.
@@ -205,6 +205,7 @@ async function viaGemini({ systemPrompt, screenshotBase64, history, timeoutMs })
     { contents: [{ parts: geminiParts({ systemPrompt, screenshotBase64, history }) }], generationConfig: { maxOutputTokens: 2000 } },
     timeoutMs
   );
+  if (status === 404) throw new Error(`Gemini error 404 (model ${GEMINI_MODEL} tidak tersedia untuk key baru — ganti GEMINI_MODEL ke gemini-3.1-flash-lite): ${JSON.stringify(data).slice(0, 200)}`);
   if (status !== 200) throw new Error(`Gemini error ${status}: ${JSON.stringify(data).slice(0, 200)}`);
   const text = (((data.candidates || [])[0] || {}).content || {}).parts || [];
   const action = extractActionBlob(text.map((p) => p.text || "").join(""));
@@ -247,7 +248,7 @@ async function callZen(args) {
   for (const name of order()) {
     try {
       const res = await PROVIDERS[name](args);
-      if (name !== "opencode") console.log(`[ai] provider dipakai: ${name}`);
+      if (name !== "opencode") console.log(`[ai] provider dipakai: ${name}${name === "gemini" ? ` (${GEMINI_MODEL})` : ""}`);
       return res;
     } catch (e) {
       errs.push(`${name}: ${e.message}`);
