@@ -1,7 +1,8 @@
 // Rantai provider LLM vision. Urutan via LLM_PROVIDER (default: auto).
-// - opencode (default utama): panggil model gratis via CLI OpenCode dalam sesi
-//   OpenCode (free tier hanya boleh dipakai di dalam OpenCode).
-//   Model: OPENCODE_MODEL (default opencode/muse-spark-1.3-contributor-free),
+// - opencode (default utama): panggil model via CLI OpenCode
+//   (model *-free hanya boleh dipakai di dalam OpenCode; di server wajib
+//   model berbayar dengan kredit, mis. DeepSeek V4.1 Flash yang support vision).
+//   Model: OPENCODE_MODEL (default opencode/deepseek-v4.1-flash),
 //   agent tanpa tool tulis (default plan). Usage+cost dibaca dari event
 //   step_finish dan sesi OpenCode.
 // - zen: OpenCode Zen Responses langsung (butuh saldo untuk model berbayar;
@@ -23,7 +24,7 @@ const OPENCODE_BIN = process.env.OPENCODE_BIN || "opencode";
 const OPENCODE_CWD = process.env.OPENCODE_CWD || path.join(__dirname, "../../..");
 // Direktori kerja sesi opencode (isolasinya per --title/session, bukan folder)
 const OPENCODE_DIR = process.env.OPENCODE_DIR || path.join(__dirname, "../..");
-const OPENCODE_MODEL = process.env.OPENCODE_MODEL || "opencode/muse-spark-1.3-contributor-free";
+const OPENCODE_MODEL = process.env.OPENCODE_MODEL || "opencode/deepseek-v4.1-flash";
 const OPENCODE_AGENT = process.env.OPENCODE_AGENT || "qa-vision";
 
 function order() {
@@ -248,7 +249,7 @@ async function callZen(args) {
   for (const name of order()) {
     try {
       const res = await PROVIDERS[name](args);
-      if (name !== "opencode") console.log(`[ai] provider dipakai: ${name}${name === "gemini" ? ` (${GEMINI_MODEL})` : ""}`);
+      console.log(`[ai] provider dipakai: ${name}${name === "gemini" ? ` (${GEMINI_MODEL})` : name === "opencode" ? ` (${OPENCODE_MODEL})` : ""}`);
       return res;
     } catch (e) {
       errs.push(`${name}: ${e.message}`);
